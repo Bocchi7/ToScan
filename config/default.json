@@ -1,0 +1,21 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 43129,
+    "secureCookies": false
+  },
+  "limits": {
+    "maxInitialUrls": 3,
+    "maxAdditionalUrls": 3,
+    "maxUrlLength": 2048,
+    "maxQuestionLength": 2000,
+    "maxLookupRounds": 2,
+    "maxNewUrlsPerTurn": 5,
+    "fetchTimeoutMs": 10000,
+    "maxResponseBytes": 2097152,
+    "maxRenderAttempts": 1,
+    "renderTimeoutMs": 15000,
+    "analysisTimeoutMs": 90000,
+    "sessionIdleTimeoutMs": 3600000
+  }
+}
