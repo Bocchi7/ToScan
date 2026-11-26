@@ -11,7 +11,8 @@
     "dev:api": "node --watch src/server/index.ts",
     "dev:web": "vite",
     "check": "tsc --noEmit",
-    "test": "node --test src/server/app.test.ts",
+    "test": "node --test src/server/app.test.ts src/analysis/*.test.ts",
+    "analysis:fixture": "node --env-file-if-exists=.env src/analysis/run-fixture.ts",
     "build": "npm run check && vite build"
   },
   "dependencies": {

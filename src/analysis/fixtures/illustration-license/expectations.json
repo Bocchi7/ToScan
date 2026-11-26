@@ -1,0 +1,23 @@
+{
+  "complete": {
+    "requiredCitations": [
+      { "documentId": "d1", "paragraphId": "p1" },
+      { "documentId": "d2", "paragraphId": "p1" }
+    ],
+    "requiresMissingClauseGap": false,
+    "reviewChecklist": [
+      "区分服务内展示许可与付费广告用途。",
+      "明确付费广告须另行取得创作者授权，不能写成平台可直接商用。",
+      "引用为对应段落的连续原文；不要求答案逐字复述模拟回答。"
+    ]
+  },
+  "missing": {
+    "requiredCitations": [{ "documentId": "d1", "paragraphId": "p1" }],
+    "requiresMissingClauseGap": true,
+    "reviewChecklist": [
+      "保留已有材料支持的服务内展示许可。",
+      "明确缺少内容授权规则，无法确定付费广告的授权条件。",
+      "不得引用 d2 或声称已经补查 c1。"
+    ]
+  }
+}

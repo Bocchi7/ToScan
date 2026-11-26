@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "section": "platformRights",
+      "text": "上传后平台可在服务内展示插画。",
+      "citations": [
+        { "documentId": "d1", "paragraphId": "p1", "quote": "上传作品即授予平台在服务内展示作品的许可。" }
+      ]
+    }
+  ],
+  "gaps": [
+    { "code": "MISSING_CLAUSE", "detail": "未提供《内容授权规则》正文，无法确定平台将插画用于付费广告的授权条件。" }
+  ]
+}

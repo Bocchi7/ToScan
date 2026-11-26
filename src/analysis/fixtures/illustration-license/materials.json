@@ -1,0 +1,34 @@
+[
+  {
+    "document": {
+      "id": "d1",
+      "title": "服务条款",
+      "url": "https://example.org/terms",
+      "paragraphs": [
+        {
+          "id": "p1",
+          "section": "用户内容",
+          "text": "上传作品即授予平台在服务内展示作品的许可。推广用途适用《内容授权规则》。"
+        }
+      ]
+    },
+    "candidates": [
+      { "id": "c1", "url": "https://example.org/content-policy", "label": "内容授权规则" }
+    ]
+  },
+  {
+    "document": {
+      "id": "d2",
+      "title": "内容授权规则",
+      "url": "https://example.org/content-policy",
+      "paragraphs": [
+        {
+          "id": "p1",
+          "section": "广告用途",
+          "text": "平台将作品用于付费广告，须另行取得创作者授权。"
+        }
+      ]
+    },
+    "candidates": []
+  }
+]
