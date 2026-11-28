@@ -23,6 +23,9 @@ if (cases.length > 1 || (cases[0] !== undefined && !['complete', 'missing'].incl
     console.error('人工核对项：\n' + fixture.expectations.reviewChecklist.map(item => `- ${item}`).join('\n'));
   } catch (error) {
     console.error(controller.signal.aborted ? '分析已取消。' : error instanceof AnalysisError ? `${error.code}: ${error.message}` : '样例运行失败。');
+    if (error instanceof AnalysisError && error.diagnostics) {
+      console.error('模型响应诊断（rawContent 为未经修改的原始回答）：\n' + JSON.stringify(error.diagnostics, null, 2));
+    }
     process.exitCode = controller.signal.aborted ? 130 : 1;
   } finally {
     process.removeListener('SIGINT', cancel);

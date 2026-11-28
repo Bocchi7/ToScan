@@ -15,6 +15,14 @@ test('preserves exact quote whitespace; does not claim to verify source truth', 
   assert.equal(parseDraftAnswer(JSON.stringify(draft)).findings[0].citations[0].quote, ' 保留\n原文 ');
 });
 
+test('schema feedback identifies the invalid field and expected type', () => {
+  assert.throws(() => parseDraftAnswer('{"findings":[],"gaps":"missing"}'), error => {
+    assert.ok(error instanceof Error);
+    assert.match(error.message, /gaps.*array/);
+    return true;
+  });
+});
+
 test('rejects malformed JSON and invalid shapes, fields, enums and empty citations', () => {
   const valid = JSON.parse(loadFixture('complete').mockOutput);
   const invalid = [

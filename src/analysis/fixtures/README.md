@@ -1,6 +1,8 @@
 # 分析样例
 
-按场景保存数据。当前 `illustration-license/` 来自 `interface-spec.md` 的联调示例，是自定义的短协议，不是真实平台协议；`example.org` 地址不用于实际抓取。
+[返回分析模块说明](../README.md)
+
+按场景保存数据。当前 `illustration-license/` 来自 [interface-spec.md](../../../interface-spec.md) 的联调示例，是自定义的短协议，不是真实平台协议；`example.org` 地址不用于实际抓取。
 
 | 文件 | 用途 |
 | --- | --- |

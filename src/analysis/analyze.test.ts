@@ -4,6 +4,8 @@ import type { AnalysisTools } from './contracts.ts';
 import { createAnalyze, AnalysisError } from './index.ts';
 import { loadFixture } from './fixtures/index.ts';
 import type { ModelInput } from './model.ts';
+import { createChatModel } from './model.ts';
+import { buildPrompt } from './prompt.ts';
 
 function tools(signal = new AbortController().signal): AnalysisTools {
   return { signal, readRelated: async () => { assert.fail('v1 must not read related pages'); } };
@@ -74,12 +76,87 @@ test('oversized input and missing materials fail before calling the model', asyn
   assert.throws(() => createAnalyze(model, { maxOutputChars: 0 }), { code: 'INVALID_CONFIG' });
 });
 
-test('invalid and oversized output fail without a repair call', async () => {
+test('invalid output gets exactly one repair, oversized output gets none', async () => {
   const fixture = loadFixture('complete');
   let calls = 0;
   await assert.rejects(createAnalyze({ generate: async () => { calls++; return 'not JSON'; } })(fixture.input, tools()), { code: 'INVALID_DRAFT' });
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(createAnalyze({ generate: async () => { calls++; return fixture.mockOutput; } }, { maxOutputChars: 2 })(fixture.input, tools()), { code: 'MODEL_RESPONSE_INVALID' });
   assert.equal(calls, 1);
-  await assert.rejects(createAnalyze({ generate: async () => fixture.mockOutput }, { maxOutputChars: 2 })(fixture.input, tools()), { code: 'MODEL_RESPONSE_INVALID' });
+});
+
+test('repair includes original context, failed draft and concrete validation feedback', async () => {
+  const fixture = loadFixture('complete');
+  for (const invalid of ['not JSON', '{"findings":[],"gaps":"missing"}']) {
+    const requests: ModelInput[] = [];
+    const analyze = createAnalyze({ generate: async request => {
+      requests.push(request);
+      return requests.length === 1 ? invalid : fixture.mockOutput;
+    } });
+    const draft = await analyze(fixture.input, tools());
+    assert.deepEqual(draft, JSON.parse(fixture.mockOutput));
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0].repair, undefined);
+    assert.equal(requests[1].system, requests[0].system);
+    assert.equal(requests[1].user, requests[0].user);
+    assert.equal(requests[1].signal, requests[0].signal);
+    assert.equal(requests[1].repair?.previousOutput, invalid);
+    assert.match(requests[1].repair!.feedback, invalid === 'not JSON' ? /JSON 无法解析/ : /gaps.*array/);
+    assert.match(requests[1].repair!.feedback, /不得.*编造引用/);
+  }
+});
+
+test('SDK integration sends a repair conversation and never a third HTTP request', async () => {
+  const fixture = loadFixture('complete');
+  for (const repaired of [fixture.mockOutput, '{"findings":[],"gaps":"still wrong"}']) {
+    const bodies: Array<{ messages: Array<{ role: string; content: string }> }> = [];
+    const invalid = '{"findings":[],"gaps":"wrong"}';
+    const model = createChatModel({ provider: 'deepseek', baseUrl: 'https://api.deepseek.com', apiKey: 'test-key', model: 'deepseek-flash' }, async (_url, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return Response.json({ choices: [{ finish_reason: 'stop', message: { content: bodies.length === 1 ? invalid : repaired } }] });
+    });
+    const result = createAnalyze(model)(fixture.input, tools());
+    if (repaired === fixture.mockOutput) assert.deepEqual(await result, JSON.parse(repaired));
+    else await assert.rejects(result, { code: 'INVALID_DRAFT' });
+    assert.equal(bodies.length, 2);
+    assert.deepEqual(bodies[1].messages.slice(0, 2), bodies[0].messages);
+    assert.deepEqual(bodies[1].messages.map(message => message.role), ['system', 'user', 'assistant', 'user']);
+    assert.equal(bodies[1].messages[2].content, invalid);
+    assert.match(bodies[1].messages[3].content, /gaps.*array/);
+  }
+});
+
+test('repair context is subject to the same input limit', async () => {
+  const fixture = loadFixture('complete');
+  const prompt = buildPrompt(fixture.input, 60000);
+  let calls = 0;
+  const analyze = createAnalyze({ generate: async () => { calls++; return 'bad'; } }, {
+    maxInputChars: prompt.system.length + prompt.user.length,
+  });
+  await assert.rejects(analyze(fixture.input, tools()), { code: 'INPUT_TOO_LONG' });
+  assert.equal(calls, 1);
+});
+
+test('transport failures, timeout, refusal and truncation never trigger format repair', async () => {
+  const fixture = loadFixture('complete');
+  for (const code of ['MODEL_REQUEST_FAILED', 'MODEL_TIMEOUT', 'MODEL_RESPONSE_INVALID'] as const) {
+    let calls = 0;
+    await assert.rejects(createAnalyze({ generate: async () => { calls++; throw new AnalysisError(code, 'failed'); } })(fixture.input, tools()), { code });
+    assert.equal(calls, 1);
+  }
+});
+
+test('cancellation during format repair stops without a third request', async () => {
+  const fixture = loadFixture('complete');
+  const controller = new AbortController();
+  let calls = 0;
+  await assert.rejects(createAnalyze({ generate: async () => {
+    calls++;
+    if (calls === 2) controller.abort();
+    return calls === 1 ? 'bad' : fixture.mockOutput;
+  } })(fixture.input, tools(controller.signal)), { name: 'AbortError' });
+  assert.equal(calls, 2);
 });
 
 test('cancellation before a call and after a model resolves never returns success', async () => {
